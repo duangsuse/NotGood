@@ -64,3 +64,32 @@ const withText = text => e => { e.innerText = text; };
 HTMLElement.prototype.removeAllChild = function() {
     while (this.firstChild) { this.removeChild(this.firstChild); }
 };
+
+//// Captcha verify():Boolean
+class AppCaptcha {
+    constructor() {
+        this.expr = [...genMathExpr(3)].join("");
+    }
+    verify() {
+        let answer = window.prompt(`请输入 ${this.expr} 的结果`);
+        if (answer == null) return null;
+        else return Number.parseInt(answer) == eval(this.expr); //TODO compat
+    }
+}
+function randomPick(xs) {
+    return xs[Math.floor(xs.length * Math.random())];
+};
+function* genMathExpr(len) { len = len - 1;
+    const atomNum = "123456789".split("");
+    const op = "+-*".split("");
+    function* genAtomNum() {
+        const nDigit = [1, 2];
+        for (let _t=0; _t<randomPick(nDigit); _t++)
+            { yield randomPick(atomNum); }
+    }
+    yield* genAtomNum(); //first term "len-1"
+    for (let _t=0; _t<len; _t++) {
+        yield randomPick(op);
+        yield* genAtomNum();
+    }
+}

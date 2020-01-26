@@ -72,9 +72,12 @@ doSubmit.onclick = () => {
     runSubmit(getData()).then(alertChanges).catch(alert);
 };
 doDestroy.onclick = async () => {
+    let challenge = new AppCaptcha();
+    if (!await challenge.verify()) return;
     let {place, name} = getData();
     let record = await findInPlace(place, name);
-    record.singleOrNull().destroy().catch(alert); //TODO null propga
+    record.singleOrNull().destroy()
+    .then(r => alert(`已删除 ${DataList.show(r.attributes)}`)).catch(alert); //TODO null propga
 };
 function alertChanges(submit_res) {
     const r = submit_res; console.log(r)
