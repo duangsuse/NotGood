@@ -14,7 +14,7 @@ author: duangsus
 <input id="name" placeholder="名字" />
 <select id="status">
 <option>否</option>
-<option>是</option></select> <button id="do-submit">更新</button>
+<option>是</option></select> <button id="do-submit">更新</button> <button id="do-destroy">删除</button>
 
 <script src="https://cdn.jsdelivr.net/npm/superagent"></script>
 <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.2/dist/av-min.js"></script>
@@ -55,7 +55,8 @@ const
     status = id("status");
 [place, name, status].forEach(persist);
 const
-    doSubmit = id("do-submit");
+    doSubmit = id("do-submit"),
+    doDestroy = id("do-destroy");
 
 async function runSubmit(data) {
     let {place, name, status} = data;
@@ -64,9 +65,16 @@ async function runSubmit(data) {
     d.set("place", place); d.set("name", name); d.set("status", status);
     return d.save();
 }
+function getData() {
+    return { place: place.value, name: name.value, status: 是否.to(status.value) };
+}
 doSubmit.onclick = () => {
-    let data = { place: place.value, name: name.value, status: 是否.to(status.value) };
-    runSubmit(data).then(alertChanges).catch(alert);
+    runSubmit(getData()).then(alertChanges).catch(alert);
+};
+doDestroy.onclick = async () => {
+    let {place, name} = getData();
+    let record = await findInPlace(place, name);
+    record.singleOrNull().destroy().catch(alert); //TODO null propga
 };
 function alertChanges(submit_res) {
     const r = submit_res; console.log(r)
@@ -108,8 +116,11 @@ async function runRefresh() {
     )));
     let rows = [...filterData(keys, all)]; console.log(rows)
     let showRows = rows.map(row => [...zipWith(keys, row)].map(vc => { let [v, name] = vc;
-        if (name == "status") return 是否.from(v);
-        else return v.toString();
+        switch (name) {
+            case "status": return 是否.from(v);
+            case "createdAt": case "updatedAt": return pTime(v);
+            default: return v.toString();
+        }
     }));
     list.appendChild(element("tbody", withDefaults,
         ...showRows.map(row => element("tr", withDefaults,
