@@ -1,6 +1,6 @@
 ---
 title: 健康状况名单
-author: duangsus
+author: duangsuse
 ---
 
 # 健康状况名单
