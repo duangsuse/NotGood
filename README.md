@@ -32,10 +32,6 @@ const
     doSubmit = id("do-submit"),
     doDestroy = id("do-destroy");
 
-function getData() {
-    return { place: place.value, name: name.value, status: 是否.to(status.value) };
-}
-
 doSubmit.onclick = () => {
     runSubmit(getData())
     .then(alertChanges).catch(alert);
@@ -54,7 +50,7 @@ doDestroy.onclick = async () => {
 
 > 可选显示：`位置`、`学生`、`状态`、`创建时间`、`更新时间`
 
-<input id="list-fmt" placeholder="显示项目" value="学生 状态" />
+<input id="list-fmt" placeholder="显示项目" value="学生 状态 更新时间" />
 
 > 导入/导出：<button id="do-export-csv">导出CSV</button> <button id="do-export-json">导出JSON</button> <button id="do-import-json">导入JSON</button>
 

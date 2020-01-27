@@ -1,3 +1,6 @@
+function getData() {
+    return { place: place.value, name: name.value, status: 是否.to(status.value) };
+}
 async function runSubmit(data) {
     let {place, name, status} = data;
     let defaultD = await findInPlace(place, name);
