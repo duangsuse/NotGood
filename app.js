@@ -1,6 +1,3 @@
-function getData() {
-    return { place: place.value, name: name.value, status: 是否.to(status.value) };
-}
 async function runSubmit(data) {
     let {place, name, status} = data;
     let defaultD = await findInPlace(place, name);
@@ -23,14 +20,12 @@ const jsonConv = {
     from: JSON.parse,
     to: JSON.stringify
 };
-const csvConv = {
-    to: xs => xs.map(row => row.join(",")).join("\n")
-};
 
 const keyTranslate = {
     位置: "place", 学生: "name", 状态: "status",
     创建时间: "createdAt", 更新时间: "updatedAt"
 };
+
 function getFilterKeys() {
     let fmtList = listFmt.value.split(" ");
     let keys = [...translateBy(keyTranslate, fmtList)];

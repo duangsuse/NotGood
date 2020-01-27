@@ -32,6 +32,10 @@ const
     doSubmit = id("do-submit"),
     doDestroy = id("do-destroy");
 
+function getData() {
+    return { place: place.value, name: name.value, status: 是否.to(status.value) };
+}
+
 doSubmit.onclick = () => {
     runSubmit(getData())
     .then(alertChanges).catch(alert);
@@ -69,34 +73,26 @@ const
     doExportJSON = id("do-export-json"),
     doImportJSON = id("do-import-json");
 
+let lastRecords; //last records
+
+const csvConv = {
+    to: xs => xs.map(it => Object.values(it)).map(row => row.join(",")).join("\n")
+};
+
 doRefresh.onclick = async () => {
     let all = await findAllInPlace(place.value); console.log(all)
     let plainRecords = all.map(mergeAVObject);
+    lastRecords = plainRecords;
     runRefresh(plainRecords);
 };
 
 let exportDataGetset = [
-    () => exportData.textContent,
-    v => { exportData.textContent = v }
+    () => exportData.value,
+    v => { exportData.value = v }
 ];
 let tableGetset = [
-    () => [...list.querySelector("tbody").children].map(tr =>
-        [...tr.children].map(td => td.innerText)),
-    v => {
-        let filterKeys = getFilterKeys();
-        runRefresh( [...v.map(row => {
-            let converted = [...zipWith(row, filterKeys)].map(vc => { let [v, name] = vc;
-                switch (name) {
-                    case "status": return 是否.to(v);
-                    case "createdAt": case "updatedAt": return new Date(v);
-                    case "未知": return undefined;
-                    default: return v;
-                }
-            });
-            return Object.fromEntries(converted);
-            })
-        ] );
-    }
+    () => lastRecords,
+    v => runRefresh(v)
 ];
 enableDataConvert(exportDataGetset, tableGetset,
     [jsonConv, [doImportJSON, doExportJSON]],
