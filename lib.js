@@ -27,16 +27,16 @@ Array.prototype.singleOrNull = function() {
 }
 
 //// PART II
-
+function mergeAVObject(av_o) {
+    let merged = {...av_o.attributes};
+    for (let key of ["updatedAt", "createdAt"]) {
+        merged[key] = av_o[key];
+    }
+    return merged;
+}
 function* filterData(keys, records) {
     // n, m (row, col) map order
-    for (let record of records) yield keys.map(k => {
-        if (k == "createdAt" || k == "updatedAt") {
-            return record[k];
-        } else {
-            return record.attributes[k];
-        }
-    });
+    for (let record of records) yield keys.map(k => record[k]);
 }
 function* translateBy(map, xs) {
     if (! (map instanceof Map)) map = new Map(Object.entries(map));
@@ -61,6 +61,19 @@ function element(tagName, init, ...children) {
 const withDefaults = e => {};
 const withText = text => e => { e.innerText = text; };
 
+function enableDataConvert(dst_getset, src_getset, ...formats) {
+    const [getDst, setDst] = dst_getset;
+    const [getSrc, setSrc] = src_getset;
+    for (let [conv, [btnFrom, btnTo]] of formats) { //TODO null propa
+        if(btnFrom!=null)btnFrom.onclick = () => {
+            setSrc(conv.from(getDst()));
+        };
+        if(btnTo!=null)btnTo.onclick = () => {
+            setDst(conv.to(getSrc()));
+        };
+    }
+}
+
 HTMLElement.prototype.removeAllChild = function() {
     while (this.firstChild) { this.removeChild(this.firstChild); }
 };
@@ -70,7 +83,7 @@ class AppCaptcha {
     constructor() {
         this.expr = [...genMathExpr(3)].join("");
     }
-    verify() {
+    async verify() {
         let answer = window.prompt(`请输入 ${this.expr} 的结果`);
         if (answer == null) return null;
         else return Number.parseInt(answer) == eval(this.expr); //TODO compat

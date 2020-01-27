@@ -16,11 +16,10 @@ author: duangsuse
 <option>否</option>
 <option>是</option></select> <button id="do-submit">更新</button> <button id="do-destroy">删除</button>
 
-<script src="https://cdn.jsdelivr.net/npm/superagent"></script>
 <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.2/dist/av-min.js"></script>
 
 <script>
-//MultiMap<PlaceID, Map<StudendID, Boolean>>
+//Map<PlaceID, Map<StudendID, Boolean>>
 const { Object: AVObject, Query } = AV;
 let leanCfg = {
     appId: "vrkHiVb84rpKhuvE30mNpJ9n-gzGzoHsz",
@@ -33,12 +32,13 @@ const DataList = AVObject.extend(kDataList);
 DataList.show = function(o) {
     return `位置：${o.place}、名：${o.name}、状态：${是否.from(o.status)}`;
 };
-
+//map[place][name]
 function findInPlace(place, name) {
     let q = new Query(kDataList);
     q.equalTo("place", place); q.equalTo("name", name);
     return q.find();
 }
+//map[place].entries()
 function findAllInPlace(place) {
     let q = new Query(kDataList);
     q.equalTo("place", place);
@@ -76,8 +76,8 @@ doDestroy.onclick = async () => {
     if (!await challenge.verify()) return;
     let {place, name} = getData();
     let record = await findInPlace(place, name);
-    record.singleOrNull().destroy()
-    .then(r => alert(`已删除 ${DataList.show(r.attributes)}`)).catch(alert); //TODO null propga
+    record.forEach(it => it.destroy()
+    .then(r => alert(`已删除 ${DataList.show(r.attributes)}`)).catch(alert) ); //TODO null propga
 };
 function alertChanges(submit_res) {
     const r = submit_res; console.log(r)
@@ -93,44 +93,85 @@ function alertChanges(submit_res) {
 
 > 可选显示：`位置`、`学生`、`状态`、`创建时间`、`更新时间`
 
-<input id="list-fmt" value="学生 状态" />
+<input id="list-fmt" placeholder="显示项目" value="学生 状态" />
 
-<table id="list">
-</table>
+> 导入/导出：<button id="do-export-csv">导出CSV</button> <button id="do-export-json">导出JSON</button> <button id="do-import-json">导入JSON</button>
+
+<textarea id="export-data"></textarea>
+
+<table id="list"></table>
 
 <script>
 const
     listFmt = id("list-fmt"),
     list = id("list"),
-    doRefresh = id("do-refresh");
+    doRefresh = id("do-refresh"),
+    doExportCSV = id("do-export-csv"),
+    doExportJSON = id("do-export-json"),
+    doImportJSON = id("do-import-json"),
+    exportData = id("export-data");
+
+const jsonConv = {
+    from: JSON.parse,
+    to: JSON.stringify
+};
+const csvConv = {
+    to: xs => xs.map(row => row.join(",")).join("\n")
+};
+
+let exportDataGetset = [
+    () => exportData.textContent,
+    v => { exportData.textContent = v }
+];
+let tableGetset = [
+    () => [...list.querySelector("tbody").children].map(tr =>
+        [...tr.children].map(td => td.innerText)),
+    v => {
+        let filterKeys = getFilterKeys();
+        runRefresh( [...v.map(row => 
+            Object.fromEntries(zipWith(row, filterKeys))
+        )] );
+    }
+];
+enableDataConvert(exportDataGetset, tableGetset,
+    [jsonConv, [doImportJSON, doExportJSON]],
+    [csvConv, [null, doExportCSV]]);
 
 const keyTranslate = {
     位置: "place", 学生: "name", 状态: "status",
     创建时间: "createdAt", 更新时间: "updatedAt"
 };
-
-async function runRefresh() {
-    let all = await findAllInPlace(place.value); console.log(all)
-    let keys = [...translateBy(keyTranslate, listFmt.value.split(" "))];
+function getFilterKeys() {
+    let fmtList = listFmt.value.split(" ");
+    let keys = [...translateBy(keyTranslate, fmtList)];
+    return keys;
+}
+function runRefresh(records) {
+    let keys = getFilterKeys();
+    let rows = [...filterData(keys, records)]; console.log(rows)
     list.removeAllChild();
     list.appendChild(element("thead", withDefaults,
     ...keys.map(k =>
         element("td", withText(k))
     )));
-    let rows = [...filterData(keys, all)]; console.log(rows)
-    let showRows = rows.map(row => [...zipWith(keys, row)].map(vc => { let [v, name] = vc;
+    let shownRows = rows.map(row => [...zipWith(keys, row)].map(vc => { let [v, name] = vc;
         switch (name) {
             case "status": return 是否.from(v);
             case "createdAt": case "updatedAt": return pTime(v);
+            case undefined: return "未知";
             default: return v.toString();
         }
     }));
     list.appendChild(element("tbody", withDefaults,
-        ...showRows.map(row => element("tr", withDefaults,
+        ...shownRows.map(row => element("tr", withDefaults,
                 ...row.map( col => element("td", withText(col)) )
             )
         )
     ));
 }
-doRefresh.onclick = runRefresh;
+doRefresh.onclick = async () => {
+    let all = await findAllInPlace(place.value); console.log(all)
+    let plainRecords = all.map(mergeAVObject);
+    runRefresh(plainRecords);
+};
 </script>
