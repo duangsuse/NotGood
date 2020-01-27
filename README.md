@@ -18,58 +18,23 @@ author: duangsuse
 
 <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.2/dist/av-min.js"></script>
 
-<script>
-//Map<PlaceID, Map<StudendID, Boolean>>
-const { Object: AVObject, Query } = AV;
-let leanCfg = {
-    appId: "vrkHiVb84rpKhuvE30mNpJ9n-gzGzoHsz",
-    appKey: "i1EcieJLk84iKlEQ1zWuBtFC",
-    serverURLs: "https://vrkhivb8.lc-cn-n1-shared.com" };
-AV.init(leanCfg);
-
-const kDataList = "DataList";
-const DataList = AVObject.extend(kDataList);
-DataList.show = function(o) {
-    return `位置：${o.place}、名：${o.name}、状态：${是否.from(o.status)}`;
-};
-//map[place][name]
-function findInPlace(place, name) {
-    let q = new Query(kDataList);
-    q.equalTo("place", place); q.equalTo("name", name);
-    return q.find();
-}
-//map[place].entries()
-function findAllInPlace(place) {
-    let q = new Query(kDataList);
-    q.equalTo("place", place);
-    return q.find();
-}
-</script>
+<script src="app_model.js"></script>
 
 <script src="lib.js"></script>
+<script src="app.js"></script>
 
 <script>
 const
     place = id("place"),
-    name = id("name"),
-    status = id("status");
+    name = id("name"), status = id("status");
 [place, name, status].forEach(persist);
 const
     doSubmit = id("do-submit"),
     doDestroy = id("do-destroy");
 
-async function runSubmit(data) {
-    let {place, name, status} = data;
-    let defaultD = await findInPlace(place, name);
-    let d = defaultD.singleOrNull() || new DataList();
-    d.set("place", place); d.set("name", name); d.set("status", status);
-    return d.save();
-}
-function getData() {
-    return { place: place.value, name: name.value, status: 是否.to(status.value) };
-}
 doSubmit.onclick = () => {
-    runSubmit(getData()).then(alertChanges).catch(alert);
+    runSubmit(getData())
+    .then(alertChanges).catch(alert);
 };
 doDestroy.onclick = async () => {
     let challenge = new AppCaptcha();
@@ -79,14 +44,6 @@ doDestroy.onclick = async () => {
     record.forEach(it => it.destroy()
     .then(r => alert(`已删除 ${DataList.show(r.attributes)}`)).catch(alert) ); //TODO null propga
 };
-function alertChanges(submit_res) {
-    const r = submit_res; console.log(r)
-    if (r._changing) {
-        alert(`${pTime(r.updatedAt)} ${JSON.stringify(r.changed)}`);
-    } else {
-        alert(`${pTime(r.createdAt)} ${DataList.show(r.attributes)}`);
-    }
-}
 </script>
 
 ## 列表 <button id="do-refresh">刷新</button>
@@ -105,18 +62,17 @@ function alertChanges(submit_res) {
 const
     listFmt = id("list-fmt"),
     list = id("list"),
+    exportData = id("export-data");
+const
     doRefresh = id("do-refresh"),
     doExportCSV = id("do-export-csv"),
     doExportJSON = id("do-export-json"),
-    doImportJSON = id("do-import-json"),
-    exportData = id("export-data");
+    doImportJSON = id("do-import-json");
 
-const jsonConv = {
-    from: JSON.parse,
-    to: JSON.stringify
-};
-const csvConv = {
-    to: xs => xs.map(row => row.join(",")).join("\n")
+doRefresh.onclick = async () => {
+    let all = await findAllInPlace(place.value); console.log(all)
+    let plainRecords = all.map(mergeAVObject);
+    runRefresh(plainRecords);
 };
 
 let exportDataGetset = [
@@ -128,50 +84,21 @@ let tableGetset = [
         [...tr.children].map(td => td.innerText)),
     v => {
         let filterKeys = getFilterKeys();
-        runRefresh( [...v.map(row => 
-            Object.fromEntries(zipWith(row, filterKeys))
-        )] );
+        runRefresh( [...v.map(row => {
+            let converted = [...zipWith(row, filterKeys)].map(vc => { let [v, name] = vc;
+                switch (name) {
+                    case "status": return 是否.to(v);
+                    case "createdAt": case "updatedAt": return new Date(v);
+                    case "未知": return undefined;
+                    default: return v;
+                }
+            });
+            return Object.fromEntries(converted);
+            })
+        ] );
     }
 ];
 enableDataConvert(exportDataGetset, tableGetset,
     [jsonConv, [doImportJSON, doExportJSON]],
     [csvConv, [null, doExportCSV]]);
-
-const keyTranslate = {
-    位置: "place", 学生: "name", 状态: "status",
-    创建时间: "createdAt", 更新时间: "updatedAt"
-};
-function getFilterKeys() {
-    let fmtList = listFmt.value.split(" ");
-    let keys = [...translateBy(keyTranslate, fmtList)];
-    return keys;
-}
-function runRefresh(records) {
-    let keys = getFilterKeys();
-    let rows = [...filterData(keys, records)]; console.log(rows)
-    list.removeAllChild();
-    list.appendChild(element("thead", withDefaults,
-    ...keys.map(k =>
-        element("td", withText(k))
-    )));
-    let shownRows = rows.map(row => [...zipWith(keys, row)].map(vc => { let [v, name] = vc;
-        switch (name) {
-            case "status": return 是否.from(v);
-            case "createdAt": case "updatedAt": return pTime(v);
-            case undefined: return "未知";
-            default: return v.toString();
-        }
-    }));
-    list.appendChild(element("tbody", withDefaults,
-        ...shownRows.map(row => element("tr", withDefaults,
-                ...row.map( col => element("td", withText(col)) )
-            )
-        )
-    ));
-}
-doRefresh.onclick = async () => {
-    let all = await findAllInPlace(place.value); console.log(all)
-    let plainRecords = all.map(mergeAVObject);
-    runRefresh(plainRecords);
-};
 </script>
