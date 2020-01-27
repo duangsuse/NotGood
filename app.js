@@ -9,12 +9,8 @@ async function runSubmit(data) {
     return d.save();
 }
 function alertChanges(submit_res) {
-    const r = submit_res; console.log(r)
-    if (r._changing) {
-        alert(`${pTime(r.updatedAt)} ${JSON.stringify(r.changed)}`);
-    } else {
-        alert(`${pTime(r.createdAt)} ${DataList.show(r.attributes)}`);
-    }
+    const r = submit_res; console.log(r, "change result")
+    alert(`${pTime(r.updatedAt)} ${DataList.show(r.attributes)}`);
 }
 
 //// PART II

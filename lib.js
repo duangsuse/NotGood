@@ -6,6 +6,9 @@ function pTime(str) {
     let date = new Date(str);
     return date.toLocaleString();
 }
+function elvis(v, defaultValue) {
+    return v || defaultValue;
+}
 
 function id(id) { return document.getElementById(id); }
 function waitsElement(e, op) {

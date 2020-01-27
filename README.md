@@ -69,7 +69,7 @@ const
     doExportJSON = id("do-export-json"),
     doImportJSON = id("do-import-json");
 
-let lastRecords; //last records
+let lastRecords = null; //last records
 
 const csvConv = {
     to: xs => xs.map(it => Object.values(it)).map(row => row.join(",")).join("\n")
@@ -112,8 +112,9 @@ enableDataConvert(exportDataGetset, tableGetset,
 const
     divHistogram = id("div-histogram");
 divHistogram.onclick = () => {
+    if (lastRecords == null) return;
     let hist = histogram(lastRecords, it => it.status);
-    divHistogram.innerText = `共有 ${hist.get(false).length} 人正常、${hist.get(true).length} 人有异常\n`;
+    divHistogram.innerText = `共有 ${elvis(hist.get(false), []).length} 人正常、${elvis(hist.get(true), []).length} 人有异常\n`;
     let lesser = minBy(it => it[VAL].length, ...hist)[VAL];
     divHistogram.innerText += `人名：${lesser.map(it => it.name).join("、")}`;
 };
