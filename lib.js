@@ -34,6 +34,23 @@ function mergeAVObject(av_o) {
     }
     return merged;
 }
+const KEY = 0, VAL = 1;
+function histogram(xs, key) {
+    let hist = new Map();
+    for (let x of xs) {
+        let k = key(x);
+        if (!hist.has(k)) hist.set(k, []);
+        hist.get(k).push(x);
+    }
+    return hist;
+}
+function minBy(selector, ...xs) {
+    let min = null;
+    for (let x of xs) {
+        if (min == null || selector(x) < selector(min)) min = x;
+    }
+    return min;
+}
 function* filterData(keys, records) {
     // n, m (row, col) map order
     for (let record of records) yield keys.map(k => record[k]);

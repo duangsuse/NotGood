@@ -94,3 +94,20 @@ enableDataConvert(exportDataGetset, tableGetset,
     [jsonConv, [doImportJSON, doExportJSON]],
     [csvConv, [null, doExportCSV]]);
 </script>
+
+> 方便 Microsoft Word 粘贴一列使用的导出
+
+## 直方统计
+
+<div id="div-histogram">点我刷新</div>
+
+<script>
+const
+    divHistogram = id("div-histogram");
+divHistogram.onclick = () => {
+    let hist = histogram(lastRecords, it => it.status);
+    divHistogram.innerText = `共有 ${hist.get(false).length} 人正常、${hist.get(true).length} 人有异常\n`;
+    let lesser = minBy(it => it[VAL].length, ...hist)[VAL];
+    divHistogram.innerText += `人名：${lesser.map(it => it.name).join("、")}`;
+};
+</script>
