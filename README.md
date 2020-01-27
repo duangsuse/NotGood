@@ -95,7 +95,14 @@ enableDataConvert(exportDataGetset, tableGetset,
     [csvConv, [null, doExportCSV]]);
 </script>
 
-> 方便 Microsoft Word 粘贴一列使用的导出
+> 方便 Microsoft Excel 粘贴一列使用的导出方法
+
+还请修改 <a href="#list-fmt">这个</a> 列表格式，再进行刷新。
+
++ 改为 `学生` 可复制多行学生姓名
++ 改为 `状态` 可复制多行学生状态
+
+在 Excel 里，选择一列，粘贴复制到的多行信息即可批量输入数据。
 
 ## 直方统计
 
